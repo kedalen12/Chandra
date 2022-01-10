@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Chandra.Interfaces;
@@ -14,8 +13,8 @@ namespace Chandra
     public abstract class BaseServer : MonoBehaviour, IServer
     {
 
-        private Action<int> OnServerDestroyCallBack;
-        public Transform GetUnityObject => this.transform;
+        private Action<int> _onServerDestroyCallBack;
+        public Transform GetUnityObject => transform;
         public int ServerIdentifier { get; private set; }
         public ushort Port { get; private set; }
 
@@ -45,7 +44,7 @@ namespace Chandra
 
             _threadId = expectedThreadId;
             ServerIdentifier = serverId;
-            OnServerDestroyCallBack = onServerDestroyCallBack;
+            _onServerDestroyCallBack = onServerDestroyCallBack;
             OnThreadStart();
         }
 
@@ -56,7 +55,7 @@ namespace Chandra
         public int CurrentConnections => clients.Count;
         public bool IsFull => clients.Count >= MaxPlayers;
 
-        public List<string> clients = new List<string>();
+        public List<string> clients = new();
         public event Action OnServerHasStarted;
         public event Action<object> OnClientConnected;
         public event Action<object> OnClientDisconnected;
@@ -84,8 +83,8 @@ namespace Chandra
             OnServerHasStarted?.Invoke();
         }
 
-        private bool _destroyOnNextTick = false;
-        private bool _isAwaitingDestruction = false;
+        private bool _destroyOnNextTick;
+        private bool _isAwaitingDestruction;
 
         
         /// <summary>
@@ -107,7 +106,7 @@ namespace Chandra
                 return;
             }
             _isAwaitingDestruction = true;
-            OnServerDestroyCallBack.Invoke(ServerIdentifier);
+            _onServerDestroyCallBack.Invoke(ServerIdentifier);
             try
             {
                 await OnBeforeServerKill.Invoke();
@@ -129,7 +128,6 @@ namespace Chandra
                 return;
             }
 
-            _isTick = true;
             OnTick();
             OnTickMainThread();
             KillServerAsync().Wait();
@@ -154,7 +152,6 @@ namespace Chandra
         /// </summary>
         protected abstract void OnTickMainThread();
 
-        private bool _isTick;
         private readonly Queue<Action> _mainThreadActions = new Queue<Action>();
 
         private void Update()

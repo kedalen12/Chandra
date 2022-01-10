@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,3 +28,4 @@ public class Tester : MonoBehaviour
       Debug.Log(server is null);
     }
 }
+#endif
